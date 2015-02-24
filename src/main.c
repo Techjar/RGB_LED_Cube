@@ -73,7 +73,7 @@ int main(void) {
 	RCC_PCLK2Config(RCC_HCLK_Div1);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_TIM2, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_TIM2, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
 
 	// LED pins
@@ -85,34 +85,34 @@ int main(void) {
 	GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 	// USART pins
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_USART2);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, GPIO_AF_USART2);
+	GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_USART2);
+	GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, GPIO_AF_USART2);
 
-    USART_InitStruct.USART_BaudRate = 2000000;
-    USART_InitStruct.USART_WordLength = USART_WordLength_8b;
-    USART_InitStruct.USART_StopBits = USART_StopBits_1;
-    USART_InitStruct.USART_Parity = USART_Parity_No;
-    USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-    USART_Init(USART2, &USART_InitStruct);
+	USART_InitStruct.USART_BaudRate = 2000000;
+	USART_InitStruct.USART_WordLength = USART_WordLength_8b;
+	USART_InitStruct.USART_StopBits = USART_StopBits_1;
+	USART_InitStruct.USART_Parity = USART_Parity_No;
+	USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	USART_Init(USART2, &USART_InitStruct);
 
-    // SPI pins
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
+	// SPI pins
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
 
 	SPI_I2S_DeInit(SPI1);
 	SPI_InitStruct.SPI_Mode = SPI_Mode_Master;
@@ -126,15 +126,15 @@ int main(void) {
 	SPI_InitStruct.SPI_CRCPolynomial = 0;
 	SPI_Init(SPI1, &SPI_InitStruct);
 
-    // Latch & blank pins
+	// Latch & blank pins
 	// Pin 2 = Latch, Pin 3 = Blank
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
-    GPIOA->BSRRL = GPIO_Pin_3;
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_Init(GPIOA, &GPIO_InitStruct);
+	GPIOA->BSRRL = GPIO_Pin_3;
 
 	DMA_InitStruct.DMA_Channel = DMA_Channel_4;
 	DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t)&(USART2->DR);
@@ -153,14 +153,14 @@ int main(void) {
 	DMA_InitStruct.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 	DMA_Init(DMA1_Stream5, &DMA_InitStruct);
 
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 
-    USART_DMACmd(USART2, USART_DMAReq_Rx, ENABLE);
+	USART_DMACmd(USART2, USART_DMAReq_Rx, ENABLE);
 	DMA_ITConfig(DMA1_Stream5, DMA_IT_TC, ENABLE);
-    NVIC_InitStruct.NVIC_IRQChannel = DMA1_Stream5_IRQn;
-    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0;
-    NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStruct);
+	NVIC_InitStruct.NVIC_IRQChannel = DMA1_Stream5_IRQn;
+	NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStruct);
 
 	USART_Cmd(USART2, ENABLE);
 	DMA_Cmd(DMA1_Stream5, ENABLE);
@@ -178,15 +178,15 @@ int main(void) {
 	memset(front_buffer, 0, DATA_SIZE);
 
 	{ // dummy scope so this crap doesn't stick around
-        int count = 0;
-        for (int i = 0; i < BAM_BITS; i++) {
-            count += 8 * pow(2, i);
-            bam_counts[i] = count;
-        }
+		int count = 0;
+		for (int i = 0; i < BAM_BITS; i++) {
+			count += 8 * pow(2, i);
+			bam_counts[i] = count;
+		}
 	}
 	for (int i = 0; i < 25; i++) SPI_Transfer(0);
 	Latch_Data();
-    GPIOA->BSRRH = GPIO_Pin_3;
+	GPIOA->BSRRH = GPIO_Pin_3;
 
 	while (1) {
 		if (!buffer_ready && Serial_Available() >= DATA_SIZE) {
@@ -207,55 +207,55 @@ int main(void) {
 }
 
 void multiplex(void) {
-    // Data ordering in ledBits array:
-    // Each "sub-array" is 64 bytes, which is 512 bits, one for each LED.
-    // It's RGB, so there's 3 arrays of 64 bytes each.
-    // We have 4 sets of these, one for each BAM bit, since we're using 4 bit BAM.
-    // Each of these "sub-arrays" is then ordered with each layer using 8 bytes
-    // red0 green0 blue0
-    // red1 green1 blue1
-    // red2 green2 blue2
-    // red3 green3 blue3
+	// Data ordering in ledBits array:
+	// Each "sub-array" is 64 bytes, which is 512 bits, one for each LED.
+	// It's RGB, so there's 3 arrays of 64 bytes each.
+	// We have 4 sets of these, one for each BAM bit, since we're using 4 bit BAM.
+	// Each of these "sub-arrays" is then ordered with each layer using 8 bytes
+	// red0 green0 blue0
+	// red1 green1 blue1
+	// red2 green2 blue2
+	// red3 green3 blue3
 
 	// Turn off LEDs
 	//SPI_Transfer(0);
 	//for (int i = 0; i < 25; i++) SPI_Transfer(0);
 	//Latch_Data();
 
-    bit_mod = 192 * bam_bit; // each 192 bytes in the array is one of the BAM bits for all the LEDs
-    for (color_mod = 0; color_mod < 192; color_mod += 64) {
-        shift_out_start = bit_mod + color_mod + level;
-        shift_out_end = shift_out_start + 8;
-        for (shift_out = shift_out_end - 1; shift_out >= shift_out_start; shift_out--) {
-        	SPI_Transfer(front_buffer[shift_out]);
-        }
-    }
-    SPI_Transfer(1 << anodelevel);
+	bit_mod = 192 * bam_bit; // each 192 bytes in the array is one of the BAM bits for all the LEDs
+	for (color_mod = 0; color_mod < 192; color_mod += 64) {
+		shift_out_start = bit_mod + color_mod + level;
+		shift_out_end = shift_out_start + 8;
+		for (shift_out = shift_out_end - 1; shift_out >= shift_out_start; shift_out--) {
+			SPI_Transfer(front_buffer[shift_out]);
+		}
+	}
+	SPI_Transfer(1 << anodelevel);
 	Latch_Data();
-    // Turn off LEDs, latch data, turn on LEDs (not in use due to parasitic capacitance)
-    /*GPIOA->BSRRL = GPIO_Pin_3;
-    GPIOA->BSRRH = GPIO_Pin_2;
-    GPIOA->BSRRL = GPIO_Pin_2;
-    GPIOA->BSRRH = GPIO_Pin_3;*/
+	// Turn off LEDs, latch data, turn on LEDs (not in use due to parasitic capacitance)
+	/*GPIOA->BSRRL = GPIO_Pin_3;
+	GPIOA->BSRRH = GPIO_Pin_2;
+	GPIOA->BSRRL = GPIO_Pin_2;
+	GPIOA->BSRRH = GPIO_Pin_3;*/
 
-    bam_counter++;
-    if (bam_counter == bam_counts[bam_bit]) {
-    	bam_bit++;
-    	if (bam_bit == BAM_BITS) {
-    		bam_counter = 0;
-    		bam_bit = 0;
-    	}
-    }
+	bam_counter++;
+	if (bam_counter == bam_counts[bam_bit]) {
+		bam_bit++;
+		if (bam_bit == BAM_BITS) {
+			bam_counter = 0;
+			bam_bit = 0;
+		}
+	}
 
-    anodelevel++;
-    level += 8;
-    if (anodelevel == 8) anodelevel = 0;
-    if (level == 64) level = 0;
+	anodelevel++;
+	level += 8;
+	if (anodelevel == 8) anodelevel = 0;
+	if (level == 64) level = 0;
 }
 
 inline void Latch_Data(void) {
-    GPIOA->BSRRH = GPIO_Pin_2;
-    GPIOA->BSRRL = GPIO_Pin_2;
+	GPIOA->BSRRH = GPIO_Pin_2;
+	GPIOA->BSRRL = GPIO_Pin_2;
 }
 
 void SPI_Transfer(uint8_t value) {
@@ -288,14 +288,14 @@ int Serial_Available() {
 }
 
 void DMA1_Stream5_IRQHandler(void) {
-    if (DMA_GetITStatus(DMA1_Stream5, DMA_IT_TCIF5)) {
-    	for (int i = 0; i < DMA_BUFFER_SIZE; i++) {
-    		rx_buffer[rx_buffer_head] = dma_buffer[i];
-    		rx_buffer_head = (rx_buffer_head + 1) % RX_BUFFER_SIZE;
-    		//if (rx_buffer_head == rx_buffer_tail) GPIOD->BSRRL = GPIO_Pin_13;
-    	}
-    	DMA_ClearITPendingBit(DMA1_Stream5, DMA_IT_TCIF5);
-    }
+	if (DMA_GetITStatus(DMA1_Stream5, DMA_IT_TCIF5)) {
+		for (int i = 0; i < DMA_BUFFER_SIZE; i++) {
+			rx_buffer[rx_buffer_head] = dma_buffer[i];
+			rx_buffer_head = (rx_buffer_head + 1) % RX_BUFFER_SIZE;
+			//if (rx_buffer_head == rx_buffer_tail) GPIOD->BSRRL = GPIO_Pin_13;
+		}
+		DMA_ClearITPendingBit(DMA1_Stream5, DMA_IT_TCIF5);
+	}
 }
 
 #pragma GCC diagnostic pop
