@@ -234,8 +234,8 @@ void multiplex(void) {
 	Latch_Data();
 	// Turn off LEDs, latch data, turn on LEDs (not in use due to parasitic capacitance)
 	/*GPIOA->BSRRL = GPIO_Pin_3;
-	GPIOA->BSRRH = GPIO_Pin_2;
 	GPIOA->BSRRL = GPIO_Pin_2;
+	GPIOA->BSRRH = GPIO_Pin_2;
 	GPIOA->BSRRH = GPIO_Pin_3;*/
 
 	bam_counter++;
@@ -254,8 +254,8 @@ void multiplex(void) {
 }
 
 inline void Latch_Data(void) {
-	GPIOA->BSRRH = GPIO_Pin_2;
 	GPIOA->BSRRL = GPIO_Pin_2;
+	GPIOA->BSRRH = GPIO_Pin_2;
 }
 
 void SPI_Transfer(uint8_t value) {
