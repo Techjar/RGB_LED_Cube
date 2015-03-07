@@ -70,7 +70,7 @@ int main(void) {
 	DMA_InitTypeDef DMA_InitStruct;
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStruct;
 
-	RCC_PCLK2Config(RCC_HCLK_Div1);
+	//RCC_PCLK2Config(RCC_HCLK_Div16);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_TIM2, ENABLE);
@@ -104,21 +104,23 @@ int main(void) {
 	USART_Init(USART2, &USART_InitStruct);
 
 	// SPI pins
-	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
 	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_Init(GPIOA, &GPIO_InitStruct);
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
+	GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_SPI1);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
 
 	SPI_I2S_DeInit(SPI1);
 	SPI_InitStruct.SPI_Mode = SPI_Mode_Master;
 	SPI_InitStruct.SPI_Direction = SPI_Direction_1Line_Tx;
 	SPI_InitStruct.SPI_DataSize = SPI_DataSize_8b;
-	SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
+	SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
 	SPI_InitStruct.SPI_CPOL = SPI_CPOL_Low;
 	SPI_InitStruct.SPI_CPHA = SPI_CPHA_1Edge;
 	SPI_InitStruct.SPI_FirstBit = SPI_FirstBit_MSB;
@@ -130,7 +132,7 @@ int main(void) {
 	// Pin 2 = Latch, Pin 3 = Blank
 	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -218,15 +220,22 @@ void multiplex(void) {
 	// red3 green3 blue3
 
 	// Turn off LEDs
+	//GPIOA->BSRRH = GPIO_Pin_2;
 	//SPI_Transfer(0);
-	//for (int i = 0; i < 25; i++) SPI_Transfer(0);
-	//Latch_Data();
+	//GPIOA->BSRRL = GPIO_Pin_2;
+	for (int i = 0; i < 25; i++) SPI_Transfer(0);
+	Latch_Data();
+	//GPIOA->BSRRH = GPIO_Pin_2;
 
 	bit_mod = 192 * bam_bit; // each 192 bytes in the array is one of the BAM bits for all the LEDs
 	for (color_mod = 0; color_mod < 192; color_mod += 64) {
 		shift_out_start = bit_mod + color_mod + level;
 		shift_out_end = shift_out_start + 8;
-		for (shift_out = shift_out_end - 1; shift_out >= shift_out_start; shift_out--) {
+		// Accidentally swapped the 2 cathode boards for each color, couldn't fix it in hardware so we'll just fix it here :)
+		for (shift_out = shift_out_end - 5; shift_out >= shift_out_start; shift_out--) {
+			SPI_Transfer(front_buffer[shift_out]);
+		}
+		for (shift_out = shift_out_end - 1; shift_out >= shift_out_start + 4; shift_out--) {
 			SPI_Transfer(front_buffer[shift_out]);
 		}
 	}
@@ -254,7 +263,9 @@ void multiplex(void) {
 }
 
 inline void Latch_Data(void) {
+	for (int i = 0; i < 50; i++) asm("nop");
 	GPIOA->BSRRL = GPIO_Pin_2;
+	for (int i = 0; i < 50; i++) asm("nop");
 	GPIOA->BSRRH = GPIO_Pin_2;
 }
 
@@ -277,9 +288,12 @@ void Serial_WriteBytes(uint8_t* buf, int length) {
 
 void Serial_ReadBytes(uint8_t* buf, int length) {
 	while (Serial_Available() < length);
-	for (int i = 0; i < length; i++) {
-		buf[i] = rx_buffer[rx_buffer_tail];
-		rx_buffer_tail = (rx_buffer_tail + 1) % RX_BUFFER_SIZE;
+	int total = 0;
+	while (total < length) {
+		int amount = rx_buffer_tail + (length - total) >= RX_BUFFER_SIZE ? RX_BUFFER_SIZE - rx_buffer_tail : length - total;
+		memcpy(&buf[total], &rx_buffer[rx_buffer_tail], amount);
+		rx_buffer_tail = (rx_buffer_tail + amount) % RX_BUFFER_SIZE;
+		total += amount;
 	}
 }
 
@@ -289,10 +303,12 @@ int Serial_Available() {
 
 void DMA1_Stream5_IRQHandler(void) {
 	if (DMA_GetITStatus(DMA1_Stream5, DMA_IT_TCIF5)) {
-		for (int i = 0; i < DMA_BUFFER_SIZE; i++) {
-			rx_buffer[rx_buffer_head] = dma_buffer[i];
-			rx_buffer_head = (rx_buffer_head + 1) % RX_BUFFER_SIZE;
-			//if (rx_buffer_head == rx_buffer_tail) GPIOD->BSRRL = GPIO_Pin_13;
+		int amount = rx_buffer_head + DMA_BUFFER_SIZE >= RX_BUFFER_SIZE ? RX_BUFFER_SIZE - rx_buffer_head : DMA_BUFFER_SIZE;
+		memcpy(&rx_buffer[rx_buffer_head], &dma_buffer[0], amount);
+		rx_buffer_head = (rx_buffer_head + amount) % RX_BUFFER_SIZE;
+		if (amount < DMA_BUFFER_SIZE) {
+			memcpy(&rx_buffer[rx_buffer_head], &dma_buffer[amount], DMA_BUFFER_SIZE - amount);
+			rx_buffer_head = (rx_buffer_head + (DMA_BUFFER_SIZE - amount)) % RX_BUFFER_SIZE;
 		}
 		DMA_ClearITPendingBit(DMA1_Stream5, DMA_IT_TCIF5);
 	}
