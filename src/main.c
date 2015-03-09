@@ -179,12 +179,9 @@ int main(void) {
 	back_buffer = (uint8_t*)malloc(DATA_SIZE);
 	memset(front_buffer, 0, DATA_SIZE);
 
-	{ // dummy scope so this crap doesn't stick around
-		int count = 0;
-		for (int i = 0; i < BAM_BITS; i++) {
-			count += 8 * pow(2, i);
-			bam_counts[i] = count;
-		}
+	for (int i = 0, count = 0; i < BAM_BITS; i++) {
+		count += 8 * pow(2, i);
+		bam_counts[i] = count;
 	}
 	for (int i = 0; i < 25; i++) SPI_Transfer(0);
 	Latch_Data();
@@ -263,9 +260,9 @@ void multiplex(void) {
 }
 
 inline void Latch_Data(void) {
-	for (int i = 0; i < 50; i++) asm("nop");
+	for (int i = 0; i < 70; i++) asm("nop");
 	GPIOA->BSRRL = GPIO_Pin_2;
-	for (int i = 0; i < 50; i++) asm("nop");
+	for (int i = 0; i < 70; i++) asm("nop");
 	GPIOA->BSRRH = GPIO_Pin_2;
 }
 
