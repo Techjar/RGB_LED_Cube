@@ -33,10 +33,9 @@
 #pragma GCC diagnostic ignored "-Wmissing-declarations"
 #pragma GCC diagnostic ignored "-Wreturn-type"
 
-uint8_t* front_buffer;
-uint8_t* back_buffer;
-volatile uint8_t buffer_ready;
-volatile uint8_t spi_ready;
+volatile uint8_t* front_buffer;
+volatile uint8_t* back_buffer;
+volatile uint8_t buffer_ready = 0;
 volatile int level = 0; // this increments through the anode levels
 
 int min(int a, int b) {
@@ -66,7 +65,7 @@ int main(void) {
     TIM_OCStructInit(&TIM_OCInitStruct);
 
 	//RCC_PCLK2Config(RCC_HCLK_Div16);
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOE, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 | RCC_AHB1Periph_DMA2, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
@@ -132,14 +131,14 @@ int main(void) {
 	SPI_Init(SPI1, &SPI_InitStruct);
 
 	// LATCH, DCPRG, VPRG & 74HC595 BLANK pins
-	GPIO_InitStruct.GPIO_Pin = GPIO_LATCH_PIN | GPIO_DCPRG_PIN | GPIO_VPRG_PIN | GPIO_Pin_5;
+	GPIO_InitStruct.GPIO_Pin = GPIO_LATCH_PIN | GPIO_DCPRG_PIN | GPIO_VPRG_PIN | GPIO_74HC595OE_PIN;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
 	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_Init(GPIOA, &GPIO_InitStruct);
-	GPIOA->BSRRL = GPIO_Pin_5; // 74HC595 Output Enable
-	GPIOA->BSRRL = GPIO_DCPRG_PIN;
+	GPIO_Init(GPIO_PORT, &GPIO_InitStruct);
+	GPIO_PORT->BSRRL = GPIO_74HC595OE_PIN;
+	GPIO_PORT->BSRRL = GPIO_DCPRG_PIN;
 
 	// UART DMA
 	DMA_InitStruct.DMA_Channel = DMA_Channel_4;
@@ -232,7 +231,7 @@ int main(void) {
 	memset(front_buffer, 0, DATA_SIZE);
 
 	{ // Fill the dot correction register and zero the anode control register
-		GPIOA->BSRRL = GPIO_VPRG_PIN;
+		GPIO_PORT->BSRRL = GPIO_VPRG_PIN;
 		delay(1);
 		int size = (TLC5940_DATA_SIZE / 2) + 1;
 		DMA2_Stream5->NDTR = size;
@@ -242,13 +241,13 @@ int main(void) {
 		while (DMA_GetCmdStatus(DMA2_Stream5));
 		DMA2_Stream5->NDTR = SPI_BUFFER_SIZE;
 		delay(1);
-		GPIOA->BSRRL = GPIO_LATCH_PIN;
+		GPIO_PORT->BSRRL = GPIO_LATCH_PIN;
 		delay(1);
-		GPIOA->BSRRH = GPIO_LATCH_PIN;
+		GPIO_PORT->BSRRH = GPIO_LATCH_PIN;
 		delay(1);
-		GPIOA->BSRRH = GPIO_VPRG_PIN;
+		GPIO_PORT->BSRRH = GPIO_VPRG_PIN;
 		delay(1);
-		GPIOA->BSRRH = GPIO_Pin_5; // 74HC595 Output Enable
+		GPIO_PORT->BSRRH = GPIO_74HC595OE_PIN;
 		delay(1);
 	}
 
@@ -259,19 +258,6 @@ int main(void) {
 		if (!buffer_ready && Serial_Available() >= DATA_SIZE) {
 			Serial_ReadBytes(back_buffer, DATA_SIZE);
 			buffer_ready = 1;
-		}
-		if (spi_ready) {
-			if (buffer_ready && level == 0) {
-				buffer_swap(&front_buffer, &back_buffer);
-				buffer_ready = 0;
-			}
-			while (DMA_GetCmdStatus(DMA2_Stream5));
-			GPIOA->BSRRL = GPIO_LATCH_PIN;
-			memcpy(&spi_buffer[0], &front_buffer[TLC5940_DATA_SIZE * level], TLC5940_DATA_SIZE);
-			spi_buffer[TLC5940_DATA_SIZE] = 1 << level;
-			if (level++ == 8) level = 0;
-			GPIOA->BSRRH = GPIO_LATCH_PIN;
-			DMA_Cmd(DMA2_Stream5, ENABLE);
 		}
 	}
 
@@ -292,12 +278,12 @@ void Serial_WriteBytes(uint8_t* buf, int length) {
 
 void Serial_ReadBytes(uint8_t* buf, int length) {
 	while (Serial_Available() < length);
-	int total = 0;
-	while (total < length) {
-		int amount = rx_buffer_tail + (length - total) >= RX_BUFFER_SIZE ? RX_BUFFER_SIZE - rx_buffer_tail : length - total;
-		memcpy(&buf[total], &rx_buffer[rx_buffer_tail], amount);
-		rx_buffer_tail = (rx_buffer_tail + amount) % RX_BUFFER_SIZE;
-		total += amount;
+	int amount = rx_buffer_tail + length >= RX_BUFFER_SIZE ? RX_BUFFER_SIZE - rx_buffer_tail : length;
+	memcpy(&buf[0], &rx_buffer[rx_buffer_tail], amount);
+	rx_buffer_tail = (rx_buffer_tail + amount) % RX_BUFFER_SIZE;
+	if (amount < length) {
+		memcpy(&buf[amount], &rx_buffer[rx_buffer_tail], length - amount);
+		rx_buffer_tail = (rx_buffer_tail + (length - amount)) % RX_BUFFER_SIZE;
 	}
 }
 
@@ -315,6 +301,25 @@ void DMA1_Stream5_IRQHandler(void) {
 			rx_buffer_head = (rx_buffer_head + (DMA_BUFFER_SIZE - amount)) % RX_BUFFER_SIZE;
 		}
 		DMA_ClearITPendingBit(DMA1_Stream5, DMA_IT_TCIF5);
+	}
+}
+
+void TIM4_IRQHandler(void) {
+	if (TIM_GetFlagStatus(TIM4,TIM_IT_CC1)) {
+		if (TIM4->CR1 & TIM_CR1_DIR) {
+			if (buffer_ready && level == 0) {
+				buffer_swap(&front_buffer, &back_buffer);
+				buffer_ready = 0;
+			}
+			while (DMA_GetCmdStatus(DMA2_Stream5));
+			GPIO_PORT->BSRRL = GPIO_LATCH_PIN;
+			memcpy(&spi_buffer[0], &front_buffer[TLC5940_DATA_SIZE * level], TLC5940_DATA_SIZE);
+			spi_buffer[TLC5940_DATA_SIZE] = 1 << level;
+			if (level++ == 8) level = 0;
+			GPIO_PORT->BSRRH = GPIO_LATCH_PIN;
+			DMA_Cmd(DMA2_Stream5, ENABLE);
+		}
+		TIM_ClearITPendingBit(TIM4, TIM_IT_CC1);
 	}
 }
 
