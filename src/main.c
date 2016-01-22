@@ -71,7 +71,7 @@ int main(void) {
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStruct;
 
 	//RCC_PCLK2Config(RCC_HCLK_Div16);
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOE | RCC_AHB1Periph_GPIOD, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_TIM2, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
@@ -129,14 +129,14 @@ int main(void) {
 	SPI_Init(SPI1, &SPI_InitStruct);
 
 	// Latch & blank pins
-	// Pin 2 = Latch, Pin 3 = Blank
-	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
+	// Pin 7 = Latch, Pin 10 = Blank
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_10;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_Init(GPIOA, &GPIO_InitStruct);
-	GPIOA->BSRRL = GPIO_Pin_3;
+	GPIO_Init(GPIOE, &GPIO_InitStruct);
+	GPIOE->BSRRL = GPIO_Pin_10;
 
 	DMA_InitStruct.DMA_Channel = DMA_Channel_4;
 	DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t)&(USART2->DR);
@@ -180,12 +180,13 @@ int main(void) {
 	memset(front_buffer, 0, DATA_SIZE);
 
 	for (int i = 0, count = 0; i < BAM_BITS; i++) {
-		count += 8 * pow(2, i);
+		//count += 8 * pow(2, i);
+		count += pow(2, i);
 		bam_counts[i] = count;
 	}
 	for (int i = 0; i < 25; i++) SPI_Transfer(0);
 	Latch_Data();
-	GPIOA->BSRRH = GPIO_Pin_3;
+	GPIOE->BSRRH = GPIO_Pin_10;
 
 	while (1) {
 		if (!buffer_ready && Serial_Available() >= DATA_SIZE) {
@@ -220,7 +221,6 @@ void multiplex(void) {
 	//GPIOA->BSRRH = GPIO_Pin_2;
 	//SPI_Transfer(0);
 	//GPIOA->BSRRL = GPIO_Pin_2;
-	for (int i = 0; i < 25; i++) SPI_Transfer(0);
 	Latch_Data();
 	//GPIOA->BSRRH = GPIO_Pin_2;
 
@@ -238,6 +238,7 @@ void multiplex(void) {
 	}
 	SPI_Transfer(1 << anodelevel);
 	Latch_Data();
+	for (int i = 0; i < 25; i++) SPI_Transfer(0);
 	// Turn off LEDs, latch data, turn on LEDs (not in use due to parasitic capacitance)
 	/*GPIOA->BSRRL = GPIO_Pin_3;
 	GPIOA->BSRRL = GPIO_Pin_2;
@@ -250,20 +251,22 @@ void multiplex(void) {
 		if (bam_bit == BAM_BITS) {
 			bam_counter = 0;
 			bam_bit = 0;
+			if (++anodelevel == 8) anodelevel = 0;
+			if ((level += 8) == 64) level = 0;
 		}
 	}
 
-	anodelevel++;
+	/*anodelevel++;
 	level += 8;
 	if (anodelevel == 8) anodelevel = 0;
-	if (level == 64) level = 0;
+	if (level == 64) level = 0;*/
 }
 
 inline void Latch_Data(void) {
 	for (int i = 0; i < 70; i++) asm("nop");
-	GPIOA->BSRRL = GPIO_Pin_2;
+	GPIOE->BSRRL = GPIO_Pin_7;
 	for (int i = 0; i < 70; i++) asm("nop");
-	GPIOA->BSRRH = GPIO_Pin_2;
+	GPIOE->BSRRH = GPIO_Pin_7;
 }
 
 void SPI_Transfer(uint8_t value) {
