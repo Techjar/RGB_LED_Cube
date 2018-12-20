@@ -193,7 +193,7 @@ int main(void) {
 			Serial_ReadBytes(back_buffer, DATA_SIZE);
 			buffer_ready = 1;
 		}
-		if (buffer_ready && bam_counter == 0) {
+		if (buffer_ready && bam_counter == 0 && anodelevel == 0) {
 			buffer_swap(&front_buffer, &back_buffer);
 			buffer_ready = 0;
 		}
