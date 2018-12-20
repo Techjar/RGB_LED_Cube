@@ -7,9 +7,10 @@
 #define DATA_SIZE STRIP_LENGTH * 3
 #define ZERO_BYTES 4
 #define SEND_INTERVAL 1000000 / 180 // microseconds (change to 11 for 6-bit)
+#define START_BYTE 0x55
 
 #define RX_BUFFER_SIZE 4096
-#define DMA_BUFFER_SIZE DATA_SIZE
+#define DMA_BUFFER_SIZE 128
 
 //uint8_t spi_buffer[25]; // 25 8-bit shift registers
 uint8_t dma_buffer[DMA_BUFFER_SIZE];

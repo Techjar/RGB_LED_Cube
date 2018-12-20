@@ -215,14 +215,25 @@ int Serial_Available() {
 	return (RX_BUFFER_SIZE + rx_buffer_head - rx_buffer_tail) % RX_BUFFER_SIZE;
 }
 
+uint16_t dma_remaining = 0;
+uint16_t data_wanted = 0;
+
 void DMA1_Stream5_IRQHandler(void) {
 	if (DMA_GetITStatus(DMA1_Stream5, DMA_IT_TCIF5)) {
-		int amount = rx_buffer_head + DMA_BUFFER_SIZE >= RX_BUFFER_SIZE ? RX_BUFFER_SIZE - rx_buffer_head : DMA_BUFFER_SIZE;
-		memcpy(&rx_buffer[rx_buffer_head], &dma_buffer[0], amount);
-		rx_buffer_head = (rx_buffer_head + amount) % RX_BUFFER_SIZE;
-		if (amount < DMA_BUFFER_SIZE) {
-			memcpy(&rx_buffer[rx_buffer_head], &dma_buffer[amount], DMA_BUFFER_SIZE - amount);
-			rx_buffer_head = (rx_buffer_head + (DMA_BUFFER_SIZE - amount)) % RX_BUFFER_SIZE;
+		dma_remaining = DMA_BUFFER_SIZE;
+		while (dma_remaining > 0) {
+			const int dma_pos = DMA_BUFFER_SIZE - dma_remaining;
+			if (data_wanted > 0) {
+				const int amount = min(rx_buffer_head + dma_remaining >= RX_BUFFER_SIZE ? RX_BUFFER_SIZE - rx_buffer_head : dma_remaining, data_wanted);
+				memcpy(&rx_buffer[rx_buffer_head], &dma_buffer[dma_pos], amount);
+				rx_buffer_head = (rx_buffer_head + amount) % RX_BUFFER_SIZE;
+				dma_remaining -= amount;
+				data_wanted -= amount;
+			} else {
+				if (dma_buffer[dma_pos] == START_BYTE)
+					data_wanted = DATA_SIZE;
+				dma_remaining -= 1;
+			}
 		}
 		DMA_ClearITPendingBit(DMA1_Stream5, DMA_IT_TCIF5);
 	}
