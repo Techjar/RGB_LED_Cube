@@ -221,7 +221,7 @@ void multiplex(void) {
 	//GPIOA->BSRRH = GPIO_Pin_2;
 	//SPI_Transfer(0);
 	//GPIOA->BSRRL = GPIO_Pin_2;
-	Latch_Data();
+	//Latch_Data();
 	//GPIOA->BSRRH = GPIO_Pin_2;
 
 	bit_mod = 192 * bam_bit; // each 192 bytes in the array is one of the BAM bits for all the LEDs
@@ -238,7 +238,7 @@ void multiplex(void) {
 	}
 	SPI_Transfer(1 << anodelevel);
 	Latch_Data();
-	for (int i = 0; i < 25; i++) SPI_Transfer(0);
+	//for (int i = 0; i < 25; i++) SPI_Transfer(0);
 	// Turn off LEDs, latch data, turn on LEDs (not in use due to parasitic capacitance)
 	/*GPIOA->BSRRL = GPIO_Pin_3;
 	GPIOA->BSRRL = GPIO_Pin_2;
@@ -263,10 +263,12 @@ void multiplex(void) {
 }
 
 inline void Latch_Data(void) {
+	//GPIOE->BSRRL = GPIO_Pin_10;
 	for (int i = 0; i < 70; i++) asm("nop");
 	GPIOE->BSRRL = GPIO_Pin_7;
 	for (int i = 0; i < 70; i++) asm("nop");
 	GPIOE->BSRRH = GPIO_Pin_7;
+	//GPIOE->BSRRH = GPIO_Pin_10;
 }
 
 void SPI_Transfer(uint8_t value) {

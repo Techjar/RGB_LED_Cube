@@ -3,12 +3,12 @@
 //#define min(a,b) (a < b ? a : b)
 //#define max(a,b) (a > b ? a : b)
 
-#define BAM_BITS 4
+#define BAM_BITS 6
 #define DATA_SIZE 192 * BAM_BITS
-#define MULTIPLEX_INTERVAL 46 // microseconds (change to 11 for 6-bit)
+#define MULTIPLEX_INTERVAL 11 // microseconds (11 for 6-bit, 46 for 4-bit)
 #define START_BYTE 0x55
 
-#define RX_BUFFER_SIZE 4096
+#define RX_BUFFER_SIZE 8192
 #define DMA_BUFFER_SIZE 128
 
 //uint8_t spi_buffer[25]; // 25 8-bit shift registers
